@@ -61,6 +61,31 @@ export const register = async (req, res) => {
   }
 };
 
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "All fieldsn are required." });
+    }
+    const isValidRecord = await OTP.findOne({
+      email,
+      otp,
+      action: "account_verification",
+    });
+    if (!isValidRecord) {
+      // ✅ 400 is for bad request/invalid data
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+    await User.findOne({ email }).updateOne({ isverified: true });
+    // after updating user add this
+    await OTP.deleteOne({ email, otp }); // ← prevents OTP reuse ✅
+    return res.status(200).json({ message: "Account verified successfully." });
+  } catch (error) {
+    console.error("Error in verifyOtp controller:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -101,9 +126,9 @@ export const login = async (req, res) => {
     user.password = undefined; // remove password before sending response
     const token = generateJsonWebToken(user._id, user.role);
     res.cookie("authtoken", token, {
-      httpOnly: true, // ← JS can't access it (safer)
-      secure: true, // ← only over HTTPS
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // ← false in dev, true in prod ✅
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
@@ -118,27 +143,16 @@ export const login = async (req, res) => {
   }
 };
 
-export const verifyOtp = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ message: "All fieldsn are required." });
-    }
-    const isValidRecord = await OTP.findOne({
-      email,
-      otp,
-      action: "account_verification",
+    // req.user is already attached by protect middleware
+    // no need to fetch from DB again
+    return res.status(200).json({
+      success: true,
+      user: req.user, // ← came from middleware ✅
     });
-    if (!isValidRecord) {
-      // ✅ 400 is for bad request/invalid data
-      return res.status(400).json({ message: "Invalid or expired OTP." });
-    }
-    await User.findOne({ email }).updateOne({ isverified: true });
-    // after updating user add this
-    await OTP.deleteOne({ email, otp }); // ← prevents OTP reuse ✅
-    return res.status(200).json({ message: "Account verified successfully." });
   } catch (error) {
-    console.error("Error in verifyOtp controller:", error);
+    console.error("Error in getMyProfile controller:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -10,7 +10,12 @@ import cors from "cors";
 dotenv.config(); //it must be configed before using env variables
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // your frontend URL
+    credentials: true, // ← allows cookies to be sent ✅
+  }),
+);
 app.use(cookieParser());
 app.use(express.json()); // Middleware to parse JSON bodies
 
