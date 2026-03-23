@@ -99,7 +99,7 @@ export const login = async (req, res) => {
     }
 
     user.password = undefined; // remove password before sending response
-    const token = generateJsonWebToken(user.id, user.role);
+    const token = generateJsonWebToken(user._id, user.role);
     return res.status(200).json({
       success: true,
       message: "User logged in successfully.",
@@ -108,6 +108,31 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Unable to login", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "All fieldsn are required." });
+    }
+    const isValidRecord = await OTP.findOne({
+      email,
+      otp,
+      action: "account_verification",
+    });
+    if (!isValidRecord) {
+      // ✅ 400 is for bad request/invalid data
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+    await User.findOne({ email }).updateOne({ isverified: true });
+    // after updating user add this
+    await OTP.deleteOne({ email, otp }); // ← prevents OTP reuse ✅
+    return res.status(200).json({ message: "Account verified successfully." });
+  } catch (error) {
+    console.error("Error in verifyOtp controller:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
