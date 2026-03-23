@@ -1,4 +1,11 @@
-export const generateOtpEmailTemplate = (otp) => {
+export const generateOtpEmailTemplate = (otp, purpose) => {
+  const isEventVerification = purpose === "event_verification";
+
+  const title = isEventVerification ? "Event Booking" : "Verify Your Identity";
+  const description = isEventVerification
+    ? "You requested to book an event.<br/>Use the code below to confirm your booking."
+    : "You requested a One-Time Password.<br/>Use the code below to complete your verification.";
+
   return `
     <!DOCTYPE html>
     <html>
@@ -25,15 +32,15 @@ export const generateOtpEmailTemplate = (otp) => {
         <div class="container">
           <div class="header">
             <h1>Eventora</h1>
-            <p>✦ Verify Your Identity ✦</p>
+            <p>✦ ${title} ✦</p>
           </div>
           <div class="body">
-            <p>You requested a One-Time Password.<br/>Use the code below to complete your verification.</p>
+            <p>${description}</p>
             <div class="otp-box">
               <div class="otp">${otp}</div>
               <div class="otp-label">One Time Password</div>
             </div>
-            <div class="expiry">⏳ Expires in 10 minutes</div>
+            <div class="expiry">⏳ Expires in 5 minutes</div>
             <p style="margin-top: 24px; font-size: 13px;">If you didn't request this, please ignore this email<br/>or contact support if you're concerned.</p>
           </div>
           <div class="footer">
