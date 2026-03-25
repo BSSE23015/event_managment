@@ -10,7 +10,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const userInfo = localStorage.getItem("userInfo");
     if (userInfo) {
-      setUser(JSON.parse(userInfo));
+      const parsedData = JSON.parse(userInfo);
+      // If stored data has a user property, use that, otherwise use the whole object
+      setUser(parsedData.user || parsedData);
     }
     setLoading(false);
   }, []);
@@ -18,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const { data } = await api.post("/auth/login", { email, password });
-      setUser(data);
+      setUser(data.user);
       localStorage.setItem("userInfo", JSON.stringify(data));
       localStorage.setItem("token", data.token);
       return data;
